@@ -1,3 +1,4 @@
+import argparse
 from typing import List
 
 from neo4j import GraphDatabase
@@ -47,13 +48,16 @@ def create_package_nodes(driver: GraphDatabase.driver, package_names: List[str],
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Import packages into Neo4j")
+    parser.add_argument("--skip-clear", action="store_true", help="Skip clearing the database")
+    args = parser.parse_args()
+
     neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
-    confirm = input("Are you sure you want to clear the database? (yes/no): ")
-    if confirm.lower() == "yes":
-        clear_database(neo4j_driver)
-    else:
+    if args.skip_clear:
         print("⚠️ Skipping database clearing.")
+    else:
+        clear_database(neo4j_driver)
 
     for p_type in PackageType:
         packages = load_json_dataset(f"{p_type.value}.json")['packageNames']

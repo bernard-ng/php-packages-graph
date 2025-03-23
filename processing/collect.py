@@ -1,3 +1,4 @@
+import argparse
 import time
 
 import requests
@@ -75,19 +76,15 @@ def fetch_package_info(package_name: str) -> None:
 
 
 if __name__ == "__main__":
-    while True:
-        print("\nMenu:")
-        print("1. Fetch packages list")
-        print("2. Fetch packages info")
-        print("3. Exit")
-        choice = input("Enter your choice: ")
+    parser = argparse.ArgumentParser(description="Fetch packages from Packagist")
+    parser.add_argument("--fetch-list", action="store_true", help="Fetch packages list")
+    parser.add_argument("--fetch-info", action="store_true", help="Fetch packages info")
 
-        if choice == "1":
-            fetch_packages_list()
-        elif choice == "2":
-            fetch_packages_info()
-        elif choice == "3":
-            print("Exiting...")
-            break
-        else:
-            print("Invalid choice. Please try again.")
+    args = parser.parse_args()
+
+    if args.fetch_list:
+        fetch_packages_list()
+    elif args.fetch_info:
+        fetch_packages_info()
+    else:
+        print("No valid option provided. Use --fetch-list or --fetch-info.")
