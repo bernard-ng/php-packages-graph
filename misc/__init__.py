@@ -20,5 +20,8 @@ def load_json_dataset(path: str) -> list:
 
 def save_json_dataset(data: list, path: str) -> None:
     print(f"✅ Saving JSON dataset to {path}")
+
+    os.makedirs(os.path.join(DATA_DIR, os.path.dirname(path)), exist_ok=True)
+
     with open(os.path.join(DATA_DIR, path), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))

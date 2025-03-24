@@ -1,8 +1,8 @@
 import argparse
+import os
 import time
 
 import requests
-from tqdm import tqdm
 
 from misc import API_BASE_URL, save_json_dataset, DATA_DIR, load_json_dataset
 from misc.model import PackageType
@@ -40,9 +40,9 @@ def fetch_packages_info() -> None:
     for package_type in PackageType:
         packages = load_json_dataset(f"{package_type.value}.json")['packageNames']
 
-        for package_name in tqdm(packages, desc=f"Fetching {package_type.value} packages"):
+        for package_name in packages:
             fetch_package_info(package_name)
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         print(f"✅ {len(packages)} {package_type.value} packages fetched.")
 
@@ -60,7 +60,7 @@ def fetch_package_info(package_name: str) -> None:
     url = f"{API_BASE_URL}/packages/{package_name}.json"
     vendor, package = package_name.split("/", 1)
 
-    if f"/packages/{vendor}/{package}.json" in DATA_DIR.iterdir():
+    if os.path.exists(os.path.join(DATA_DIR, f"packages/{vendor}/{package}.json")):
         print(f"✅ {package_name} is already fetched.")
         return
 
@@ -68,7 +68,7 @@ def fetch_package_info(package_name: str) -> None:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
-        save_json_dataset(data, f"/packages/{vendor}/{package}.json")
+        save_json_dataset(data, f"packages/{vendor}/{package}.json")
 
     except requests.exceptions.RequestException as e:
         print(f"❌ Failed to fetch {package_name}: {e}")
