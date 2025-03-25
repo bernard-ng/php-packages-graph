@@ -2,7 +2,6 @@ import json
 import os
 from typing import Optional
 
-from misc.model import PackageType
 
 # Paths
 API_BASE_URL = "https://packagist.org"
@@ -25,8 +24,11 @@ def save_json_dataset(data: list, path: str) -> None:
         json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
 
-def load_packages_list(package_type: PackageType) -> list:
-    return load_json_dataset(f"{package_type.value}.json")['packageNames']
+def load_packages_list(package_type: Optional[str] = None) -> list:
+    if package_type is None:
+        return load_json_dataset("packages.json")['packageNames']
+
+    return load_json_dataset(f"{package_type}.json")['packageNames']
 
 
 def package_info_exists(package_name: str) -> bool:

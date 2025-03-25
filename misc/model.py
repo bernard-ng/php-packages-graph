@@ -1,18 +1,18 @@
 from datetime import datetime
-from enum import StrEnum
 from typing import Optional, Union, List, Dict
 
+import semver
 from pydantic import BaseModel, constr, HttpUrl
 
-
-class PackageType(StrEnum):
-    METAPACKAGE = "metapackage"
-    COMPOSER_PLUGIN = "composer-plugin"
-    PLUGIN = "plugin"
-    PHP_EXT = "php-ext"
-    PHP_EXT_ZEND = "php-ext-zend"
-    PROJECT = "project"
-    LIBRARY = "library"
+PackageType = [
+    'metapackage',
+    'composer-plugin',
+    'plugin',
+    'php-ext',
+    'php-ext-zend',
+    'project',
+    'library'
+]
 
 
 class Maintainer(BaseModel):
@@ -50,7 +50,7 @@ class Version(BaseModel):
     version_normalized: constr(min_length=1)
     license: List[str]
     authors: List[Author]
-    type: Optional[PackageType] = None
+    type: Optional[str] = None
     time: Optional[datetime] = None
     default_branch: Optional[bool] = None
     require: Optional[Dict[str, str]] = None
@@ -85,7 +85,7 @@ class Package(BaseModel):
     description: Optional[str] = None
     time: datetime
     maintainers: List[Maintainer]
-    type: Optional[PackageType] = None
+    type: Optional[str] = None
     repository: Optional[HttpUrl] = None
     github_stars: Optional[int] = None
     github_watchers: Optional[int] = None
@@ -97,6 +97,12 @@ class Package(BaseModel):
     suggesters: Optional[int] = None
     downloads: Downloads
     versions: Dict[str, Version]
+
+    def is_custom_type(self) -> bool:
+        return self.type not in PackageType
+
+    def has_stable_version(self) -> bool:
+        return any(semver.VersionInfo.is_valid(v.version_normalized.strip('v')) for v in self.versions.values())
 
     def aggregate_versions(self) -> list:
         return list({v.version_normalized for v in self.versions.values()})

@@ -2,7 +2,7 @@ import argparse
 
 from neo4j import GraphDatabase
 
-from misc import load_packages_list, PackageType, load_package_info
+from misc import load_packages_list, load_package_info
 from misc.database import neo4j_driver
 from misc.model import Package
 
@@ -24,7 +24,9 @@ def add_package_info(driver: GraphDatabase.driver, package: Package) -> None:
         github_open_issues: $github_open_issues,
         language: $language,
         abandoned: $abandoned,
-        downloads: $downloads
+        downloads: $downloads,
+        has_stable_release: $has_stable_release,
+        is_custom_type: $is_custom_type
     }
     """
 
@@ -32,10 +34,6 @@ def add_package_info(driver: GraphDatabase.driver, package: Package) -> None:
         "package_name": package.name,
         "description": package.description,
         "published_at": package.time.isoformat(),
-        "updated_at": package.last_updated_time().isoformat(),
-        "licenses": package.aggregate_licenses(),
-        "versions": package.aggregate_versions(),
-        "authors": package.aggregate_authors(),
         "repository": str(package.repository),
         "github_stars": package.github_stars,
         "github_watchers": package.github_watchers,
@@ -43,7 +41,13 @@ def add_package_info(driver: GraphDatabase.driver, package: Package) -> None:
         "github_open_issues": package.github_open_issues,
         "language": package.language,
         "abandoned": package.abandoned,
-        "downloads": package.downloads.total
+        "downloads": package.downloads.total,
+        "updated_at": package.last_updated_time().isoformat(),
+        "licenses": package.aggregate_licenses(),
+        "versions": package.aggregate_versions(),
+        "authors": package.aggregate_authors(),
+        "has_stable_release": package.has_stable_version(),
+        "is_custom_type": package.is_custom_type()
     }
 
     with driver.session() as session:
@@ -87,29 +91,29 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Add packages info and dependencies to Neo4j")
     parser.add_argument("--add-info", action="store_true", help="Update packages info")
     parser.add_argument("--add-deps", action="store_true", help="Update packages dependencies")
-    parser.add_argument("--package-type", type=str, help="Specify the package type")
 
     args = parser.parse_args()
-    selected_types = [PackageType(args.package_type)] if args.package_type else PackageType
+    packages = load_packages_list()
+    success, fail = 0, 0
 
-    for package_type in selected_types:
-        packages = load_packages_list(package_type)
-        success, fail = 0, 0
+    if not args.add_info and not args.add_deps:
+        print("🔴 No valid option provided. Use --add-info or --add-deps.")
+        exit(1)
 
-        for package_name in packages:
-            try:
-                p = Package(**load_package_info(package_name))
+    for package_name in packages:
+        try:
+            p = Package(**load_package_info(package_name))
 
-                if args.add_info:
-                    add_package_info(neo4j_driver, p)
-                if args.add_relation:
-                    add_package_dependencies(neo4j_driver, p)
+            if args.add_info:
+                add_package_info(neo4j_driver, p)
+            if args.add_deps:
+                add_package_dependencies(neo4j_driver, p)
 
-                success += 1
+            success += 1
 
-            except Exception as e:
-                print(f"🔴 Failed to define info for {package_name}: {e}")
-                fail += 1
+        except Exception as e:
+            print(f"🔴 Failed to define info for {package_name}: {e}")
+            fail += 1
 
-        neo4j_driver.close()
-        print(f"🟢 Processed {success}/{len(packages)} {package_type.value} packages successfully ({fail} failed).")
+    neo4j_driver.close()
+    print(f"🟢 Processed {success}/{len(packages)} packages successfully ({fail} failed).")
