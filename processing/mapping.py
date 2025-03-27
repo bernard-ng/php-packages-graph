@@ -25,6 +25,7 @@ def add_package_info(driver: GraphDatabase.driver, package: Package) -> None:
         language: $language,
         abandoned: $abandoned,
         downloads: $downloads,
+        type: $type,
         has_stable_release: $has_stable_release,
         is_custom_type: $is_custom_type
     }
@@ -42,6 +43,7 @@ def add_package_info(driver: GraphDatabase.driver, package: Package) -> None:
         "language": package.language,
         "abandoned": package.abandoned,
         "downloads": package.downloads.total,
+        "type": package.type,
         "updated_at": package.last_updated_time().isoformat(),
         "licenses": package.aggregate_licenses(),
         "versions": package.aggregate_versions(),
