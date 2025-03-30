@@ -55,11 +55,10 @@ ORDER BY year ASC;
 // Oldest packages still maintained
 MATCH (p:Package)
 WHERE (p.abandoned IS NULL OR p.abandoned = false)
-  AND p.initial_release_time IS NOT NULL
-  AND p.last_update_time IS NOT NULL
+  AND p.published_at IS NOT NULL
+  AND p.updated_at IS NOT NULL
 WITH DISTINCT p,
-     duration.between(datetime(p.initial_release_time), datetime(p.last_update_time)) AS lifespan
+     duration.between(datetime(p.published_at), datetime(p.updated_at)) AS lifespan
 ORDER BY lifespan.years DESC
 LIMIT 10
-RETURN DISTINCT p.full_name AS package_name, p.initial_release_time, p.last_update_time, lifespan.years
-
+RETURN DISTINCT p.full_name AS package_name, p.published_at, p.updated_at, lifespan.days
